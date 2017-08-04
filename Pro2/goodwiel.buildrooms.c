@@ -22,13 +22,14 @@
 
 
 //max size of char array
-static const int MAXCHARSIZE = 25;
-static const int FILEPATHNAME = 75;
+#define MAXCHARSIZE 25
+#define FILEPATHNAME 75
+
 //max number of random rooms
-static const int MAXRANDOMROOMS = 7;
+#define MAXRANDOMROOMS 7
 //number of rooms
-static const int MAXROOMS = 10;
-static const int BUFFERSIZE = 256;
+#define MAXROOMS 10
+#define BUFFERSIZE 256;
 
 //the room types
 static char* START_ROOM = "START_ROOM";
@@ -48,13 +49,12 @@ static char* END_ROOM = "END_ROOM";
  **         room
  *********************************************************************/
 struct room{
-    char roomName[25];
-    char roomType[25];
+    char roomName[MAXCHARSIZE];
+    char roomType[MAXCHARSIZE];
     int roomUsed;
-    char connections[7][256];
+    char connections[MAXRANDOMROOMS][BUFFERSIZE];
     int connectionCount;
 };
-
 
 
 /*********************************************************************
