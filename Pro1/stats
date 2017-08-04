@@ -1,0 +1,215 @@
+#!/bin/bash
+#Eli Goodwin
+#2017.07.10
+#CS 344 
+#Project 1
+#This program calculates the stats for a matrix entered via file or through the command line. 
+#USer enters if they want to calculate the stats for the rows or cols of the matrix and the program
+#will output the medain and mean for the row or column in question. 
+
+#Cmd line arguments: stats{-rows | -cols} [filename]
+#If no filename is given the user will enter numeric information via the terminal. 
+
+
+#tempfile created flag
+TEMPFILE=0
+#program sucess flag
+SUCCESS=0
+#error flag
+ERROR=1
+
+
+intputFile=$"temp$$"
+
+#if the program was sucessful delete the tempfile if created and exit witht the appropriate code
+PROGRAM_SUCCCES(){
+	if [[ $TEMPFILE == 1 ]]
+	then
+		rm -f "temp$$"
+		echo "Done!"
+	fi
+	exit $SUCCESS
+}
+
+#invalid arugments for row or col selection
+INVALID_ARGUMENTS(){
+	echo "Invalid arguments; to use enter the following: stats {-rows|-cols} [file]" 1>&2
+	EXIT_ERROR
+}
+
+#somethign didn't go right with the prgram
+EXIT_ERROR(){
+	if [[ $TEMPFILE == 1 ]]
+	then
+		rm -f "temp$$"
+	fi
+	exit $ERROR
+}
+
+#file could not be found or could not be read
+READ_ERROR(){
+	echo "stats cannot read the file or the file does not exist" 1>&2
+	EXIT_ERROR
+}
+
+EMPTY_FILE(){
+	echo "stats: there are no rows in this file. Cannot calculate stats. Terminating script"
+	EXIT_ERROR
+}
+
+#used to cacluate the stats for the rows
+ROW_STUFF(){
+	echo -e "Mean\tMedian"
+	while read myLine 
+	    do
+	    sum=0
+		count=0
+		mean=0
+		median=0
+	    halfway=0
+		#read line in and sort it for calcs and make it an array
+		rowData=($(echo $myLine | tr " " "\n" | sort -n | tr "\n" " " ))
+		#go through line and find sum and count of entries
+	    for i in ${rowData[@]}
+	        do
+	        (( sum = sum + i ))
+	        (( count++ ))
+		done
+
+		#calculate the average using rounding -- average is working
+		(( mean = ( sum + count / 2) / count ))
+
+		#find the median--loop through the sorted array until you are the middle
+		(( halfway = count / 2 ))
+	    #medain for the short term is...
+	    median=${rowData[$halfway]}
+	    
+	    #test if the array is even in length is so, the greater of the two possible ones will be printed
+	    if [[ $((count % 2)) == 0 ]]
+	        then
+	        median2=${rowData[$halfway-1]}
+	        if [[ $median2 > median ]]
+	            then
+	            median=$median2
+	        fi
+	    fi
+
+		#display results
+		echo -e "$mean\t$median"
+
+	done < $1
+}
+
+#used to calculate the stats for cols
+COL_STUFF(){
+	#get number of cols
+	colCount=$(head -n 1 $1| wc -w)
+	#read in file into array of strings
+
+	#create arrays to store average data
+	meanArr=( )
+	meadianArr=( )
+	#create arrays to to medain data
+	for (( i=1; i<=colCount; i++))
+	do
+		count=0
+		mean=0
+		#get the col data into an array
+		colData=($(cut -f $i < $1 | tr " " "\n" | sort -n | tr "\n" " " ))
+		sum=0;
+		# loop through the array of cols to calculate the sum of the col
+		for j in ${colData[@]}
+		do
+			(( sum = sum + j))
+			(( count++ ))
+		done
+		#calculate the mean of the col
+		(( mean = ( sum + count / 2 ) / count ))
+		#insert into meanArr
+		meanArr+=($mean) 
+		
+		#caclulate the median value fo the col
+		(( halfway = count / 2 ))
+		median=${colData[$halfway]}
+		#if the matrix is even in legnth find the correct median
+		if [[ $((count % 2)) == 0 ]]
+		then
+			median2=${colData[halfway -1]}
+			if [[ $median2 > median ]]
+			then
+				medain=$median2
+	        fi
+		fi
+
+		#add to median array
+		medianArr+=($median)
+	done
+
+	#print reults
+	printf "Means:\n"
+	for i in ${meanArr[@]}
+	do
+		printf "$i \t"
+	done
+	echo
+
+	printf "Medians:\n"
+	for j in ${medianArr[@]}
+	do
+		printf "$j \t"
+	done
+	echo
+}
+#it begins
+trap EXIT_ERROR INT HUP TERM
+
+#if no arguments pass then the program must exit
+if [[ $# == 0 || $# > 2 ]]
+	then
+	#err message
+	INVALID_ARGUMENTS
+
+#if one argument, make sure either rows or columns are specified and begin stdin
+elif [[ $# == 1 ]]
+	then
+	#being stdin stuff
+	cat > $intputFile
+	TEMPFILE=1
+
+#if given two arguments then 
+elif [[ $# == 2 ]]
+	then
+	intputFile=$2
+fi
+
+#is the file valid?
+if [[ ! -r $intputFile ]]
+	then
+	READ_ERROR
+fi
+
+#make sure there are rows in the file
+rowCount=$(cat $intputFile | wc -l)
+if [[ rowCount == 0 ]]
+then
+	EMPTY_FILE
+fi
+
+#row stats
+if [[ $1 == -r* ]]
+then
+	#generate process code for making mean and median and then displaying them
+	ROW_STUFF $intputFile
+
+#col stats
+elif [[ $1 == -c* ]]
+then
+	COL_STUFF $intputFile
+	
+#oh look there was not a valid arugment passed for the first argument
+else
+	INVALID_ARGUMENTS
+fi
+
+#made it! Can exit and delete any temp files
+PROGRAM_SUCCCES

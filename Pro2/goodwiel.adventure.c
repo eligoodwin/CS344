@@ -27,7 +27,7 @@
 #define MAXRANDOMROOMS 7
 //number of rooms
 #define MAXROOMS 10
-#define BUFFERSIZE 256;
+#define BUFFERSIZE 256
 
 //the room types
 static char* START_ROOM = "START_ROOM";
